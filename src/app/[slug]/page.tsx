@@ -119,7 +119,7 @@ export default async function DynamicPage({ params }: StateRegulationsPageProps)
   // Use cache - should be pre-warmed during generateStaticParams
   const post = await getPostBySlug(slug);
 
-  console.log('post', post);
+  //console.log('post', post);
 
   return false;
   // if (post) {
