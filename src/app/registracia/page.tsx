@@ -5,7 +5,7 @@ import { useForm, Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { createClient } from '@supabase/supabase-js';
-// import zipData from '@/data/USCities.json'; // Temporarily disabled
+import zipData from '@/data/USCities.json';
 
 // Supabase configuration - you'll need to add these to your .env file
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -93,7 +93,7 @@ export default function RegistraciaPage() {
   const [formData, setFormData] = useState(initialValues);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // const [zipLoading, setZipLoading] = useState(false); // Temporarily disabled with ZIP auto-lookup
+  const [zipLoading, setZipLoading] = useState(false);
 
   const steps = ['Step 1', 'Step 2', 'Step 3', 'Step 4'];
 
@@ -200,12 +200,8 @@ export default function RegistraciaPage() {
     
     // Look up ZIP code when we have 3-5 digits
     if (zip.length >= 3 && zip.length <= 5) {
-      // ZIP auto-lookup using zipData is temporarily disabled
-      // setZipLoading(true);
-      // setZipLoading(false);
-
-      /*
       setZipLoading(true);
+      
       try {
         // Find matching ZIP code in the data
         const zipNumber = parseInt(zip, 10);
@@ -234,7 +230,6 @@ export default function RegistraciaPage() {
       } finally {
         setZipLoading(false);
       }
-      */
     }
   };
 
@@ -293,7 +288,11 @@ export default function RegistraciaPage() {
                 placeholder="XXXXX"
                 maxLength={5}
               />
-              {/* ZIP lookup loading indicator temporarily disabled */}
+              {zipLoading && (
+                <div className="absolute right-4 top-9">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               {errors.zip && (
                 <p className="mt-1 text-sm text-red-600">{errors.zip.message as string}</p>
               )}

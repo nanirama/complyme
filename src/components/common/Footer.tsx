@@ -103,15 +103,7 @@ export default function Footer() {
                 className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 rounded-md"
                 aria-label="LOCRON - Visit website"
               >
-                <div className="relative h-6 w-6 flex-shrink-0">
-                  <Image
-                    src="/assets/locron-logo.svg"
-                    alt="LOCRON Logo"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 object-contain"
-                  />
-                </div>
+                
                 <span className="text-lg font-bold text-gray-900">LOCRON</span>
               </a>
             </div>
