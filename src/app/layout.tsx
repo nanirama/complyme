@@ -68,7 +68,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
   },
-  manifest: "/manifest.json",
+  // manifest: "/manifest.json", // Temporarily disabled to prevent manifest.json requests
 };
 
 export default function RootLayout({
