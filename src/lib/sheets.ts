@@ -256,54 +256,54 @@ const possibleSheetNames = ["Cities", "City", "Locations", "cities", "city"];
  * Get all cities from the spreadsheet
  * Tries multiple possible sheet names
  */
-export async function getCities(): Promise<City[]> {
-  const now = Date.now();
-  if (citiesCache && (now - citiesCacheTimestamp) < CITIES_CACHE_TTL) {
-    return citiesCache;
-  }
+// export async function getCities(): Promise<City[]> {
+//   const now = Date.now();
+//   if (citiesCache && (now - citiesCacheTimestamp) < CITIES_CACHE_TTL) {
+//     return citiesCache;
+//   }
 
-  for (const sheetName of possibleSheetNames) {
-    try {
-      const rows = await getSheetRows(sheetName);
-      if (rows.length > 0) {
-        const objects = rowsToObjects(rows);
-        citiesCache = objects as City[];
-        citiesCacheTimestamp = now;
-        return citiesCache;
-      }
-    } catch (error: unknown) {
-      // Check if it's a Google API error indicating invalid range
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as { code: number }).code === 400 &&
-        'message' in error &&
-        typeof (error as { message: string }).message === 'string' &&
-        (error as { message: string }).message.includes('Unable to parse range')
-      ) {
-        console.warn(`Sheet "${sheetName}" not found or invalid range, trying next...`);
-        continue; // Try next sheet name
-      }
-      // Re-throw other unexpected errors
-      throw error;
-    }
-  }
+//   for (const sheetName of possibleSheetNames) {
+//     try {
+//       const rows = await getSheetRows(sheetName);
+//       if (rows.length > 0) {
+//         const objects = rowsToObjects(rows);
+//         citiesCache = objects as City[];
+//         citiesCacheTimestamp = now;
+//         return citiesCache;
+//       }
+//     } catch (error: unknown) {
+//       // Check if it's a Google API error indicating invalid range
+//       if (
+//         typeof error === 'object' &&
+//         error !== null &&
+//         'code' in error &&
+//         (error as { code: number }).code === 400 &&
+//         'message' in error &&
+//         typeof (error as { message: string }).message === 'string' &&
+//         (error as { message: string }).message.includes('Unable to parse range')
+//       ) {
+//         console.warn(`Sheet "${sheetName}" not found or invalid range, trying next...`);
+//         continue; // Try next sheet name
+//       }
+//       // Re-throw other unexpected errors
+//       throw error;
+//     }
+//   }
 
-  console.warn('Cities sheet not found. Tried:', possibleSheetNames.join(', '));
-  citiesCache = [];
-  citiesCacheTimestamp = now;
-  return [];
-}
+//   console.warn('Cities sheet not found. Tried:', possibleSheetNames.join(', '));
+//   citiesCache = [];
+//   citiesCacheTimestamp = now;
+//   return [];
+// }
 
 /**
  * Get cities filtered by state code (uppercase)
  */
-export async function getCitiesByState(stateCode: string): Promise<City[]> {
-  const cities = await getCities();
-  const upperStateCode = stateCode.toUpperCase();
+// export async function getCitiesByState(stateCode: string): Promise<City[]> {
+//   const cities = await getCities();
+//   const upperStateCode = stateCode.toUpperCase();
 
-  return cities.filter(
-    (city) => city.state?.toUpperCase() === upperStateCode
-  );
-}
+//   return cities.filter(
+//     (city) => city.state?.toUpperCase() === upperStateCode
+//   );
+// }
