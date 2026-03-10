@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { siteConfig } from '@/config/site';
 import { generateSeoMetadata } from '@/components/common/Seo';
 import statesData from '@/data/states.json';
-import { getPostBySlug, getPosts, getCities } from '@/lib/sheets';
+import { getPostBySlug, getPosts } from '@/lib/sheets';
 
 interface StateRegulationsPageProps {
   params: Promise<{ slug: string }>;
@@ -49,18 +49,7 @@ export async function generateStaticParams() {
   // Pre-warm cache by fetching posts once
   // This ensures all subsequent calls use cache
   // This is critical to avoid quota issues during build
-  try {
-    console.log('Pre-warming cache for build...');
-    await getPosts();
-    // Also pre-warm cities cache
-    await getCities().catch((err) => {
-      console.warn('Failed to pre-warm cities cache (non-critical):', err);
-    });
-    console.log('Cache pre-warmed successfully');
-  } catch (error) {
-    console.warn('Failed to pre-warm cache during generateStaticParams:', error);
-    // Continue anyway - pages will try to fetch individually with rate limiting
-  }
+
   
   // Get posts from cache (should be available now)
   const posts = await getPosts().catch(() => []);

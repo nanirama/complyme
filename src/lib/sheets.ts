@@ -238,19 +238,19 @@ export async function getPostsByCategory(category: string): Promise<Post[]> {
 //   );
 // }
 
-export type City = {
-  city: string;
-  state: string;
-  [key: string]: string;
-};
+// export type City = {
+//   city: string;
+//   state: string;
+//   [key: string]: string;
+// };
 
 // Cache for cities
 // During build, cache persists for the entire build duration (effectively infinite)
-let citiesCache: City[] | null = null;
-let citiesCacheTimestamp: number = 0;
-const CITIES_CACHE_TTL = isBuildTime ? Number.MAX_SAFE_INTEGER : 5 * 60 * 1000;
+// let citiesCache: City[] | null = null;
+// let citiesCacheTimestamp: number = 0;
+// const CITIES_CACHE_TTL = isBuildTime ? Number.MAX_SAFE_INTEGER : 5 * 60 * 1000;
 
-const possibleSheetNames = ["Cities", "City", "Locations", "cities", "city"];
+// const possibleSheetNames = ["Cities", "City", "Locations", "cities", "city"];
 
 /**
  * Get all cities from the spreadsheet
