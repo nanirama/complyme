@@ -374,6 +374,11 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // Get all posts for navigation
   const allPosts = getAllPosts();
+
+  console.log('allPosts', allPosts);
+  //console.log('post', post);
+
+  return false;
   const currentIndex = allPosts.findIndex(p => p.slug === post.slug);
   const previousPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
