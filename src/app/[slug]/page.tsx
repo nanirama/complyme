@@ -89,41 +89,10 @@ export async function generateMetadata(
       siteUrl: siteConfig.siteUrl,
     });
   }
-  
-  // Check if this is a state regulations slug
-  if (!isStateRegulationsSlug(slug)) {
-    return {
-      title: 'Page Not Found',
-    };
-  }
-  
-  const state = getStateFromSlug(slug);
-  
-  if (!state) {
-    return {
-      title: 'Page Not Found',
-    };
-  }
-  
-  const title = `${state.title} State Regulations - Small Business Requirements`;
-  const description = `Tailored compliance solutions for small businesses in ${state.title}.`;
-  
-  return generateSeoMetadata({
-    title,
-    description,
-    keywords: [
-      `${state.title} state regulations`,
-      'small business requirements',
-      'business compliance',
-      'state regulations',
-      state.title.toLowerCase(),
-    ],
-    url: `/${slug}`,
-    type: 'article',
-    image: '/images/logo.webp',
-    siteName: siteConfig.name,
-    siteUrl: siteConfig.siteUrl,
-  });
+
+  return {
+    title: 'Page Not Found',
+  };
 }
 
 /**

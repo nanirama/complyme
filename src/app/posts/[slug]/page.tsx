@@ -357,28 +357,23 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   // Get category info
-  // const allCategories = getAllCategories();
-  // const category = allCategories.find(
-  //   cat => cat.name === post.category || cat.slug === post.category
-  // );
+  const allCategories = getAllCategories();
+  const category = allCategories.find(
+    cat => cat.name === post.category || cat.slug === post.category
+  );
 
-  // // Extract headings for table of contents
-  // const headings = extractHeadings(post.content);
+  // Extract headings for table of contents
+  const headings = extractHeadings(post.content);
 
-  // // Get other posts from the same category (excluding current post)
-  // const otherPostsInCategory = category
-  //   ? getPostsByCategory(category.name, category.slug)
-  //       .filter(p => p.slug !== post.slug)
-  //       .slice(0, 6)
-  //   : [];
+  // Get other posts from the same category (excluding current post)
+  const otherPostsInCategory = category
+    ? getPostsByCategory(category.name, category.slug)
+        .filter(p => p.slug !== post.slug)
+        .slice(0, 6)
+    : [];
 
   // Get all posts for navigation
   const allPosts = getAllPosts();
-
-  console.log('allPosts', allPosts);
-  //console.log('post', post);
-
-  return false;
   const currentIndex = allPosts.findIndex(p => p.slug === post.slug);
   const previousPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
@@ -396,7 +391,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 {post.title}
               </h1>
               
-              {/* {category && (
+              {category && (
                 <div className="flex items-center gap-2 mb-10">
                   <span className="text-lg text-gray-500">Category:</span>
                   <Link
@@ -406,7 +401,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     {category.name}
                   </Link>
                 </div>
-              )} */}
+              )}
 
               {/* Thumbnail */}
               {post.thumbnail && (() => {
@@ -430,7 +425,7 @@ export default async function PostPage({ params }: PostPageProps) {
             {/* Post Content */}
             <div className="prose prose-lg max-w-none">
               <div className="post-content cat_content">
-                {/* {renderMarkdown(post.content, headings)} */}
+                {renderMarkdown(post.content, headings)}
               </div>
             </div>
 
@@ -478,7 +473,7 @@ export default async function PostPage({ params }: PostPageProps) {
             <div className="sticky top-24 space-y-8 cat_content ">
               
               {/* Table of Contents */}
-              {/* {headings.length > 0 && (
+              {headings.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-lg font-bold text-[#718096] mb-4">
                     Table of contents
@@ -514,10 +509,10 @@ export default async function PostPage({ params }: PostPageProps) {
                     </ol>
                   </nav>
                 </div>
-              )} */}
+              )}
 
               {/* Other Posts in Same Category */}
-              {/* {otherPostsInCategory.length > 0 && (
+              {otherPostsInCategory.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-lg font-bold text-[#718096] mb-4">
                     Other Posts in {category?.name || 'This Category'}
@@ -544,7 +539,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     ))}
                   </ul>
                 </div>
-              )} */}
+              )}
             </div>
           </aside>
         </div>
