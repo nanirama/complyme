@@ -182,19 +182,44 @@ export async function getPostBySlug(slug: string): Promise<Post | undefined> {
 }
 
 /**
- * Get only post slugs (lightweight function for generateStaticParams)
- * This avoids fetching and caching large post data during build
+ * Convert column index to column letter (0 = A, 1 = B, etc.)
  */
-export async function getPostSlugs(): Promise<string[]> {
+function indexToColumnLetter(index: number): string {
+  let result = '';
+  while (index >= 0) {
+    result = String.fromCharCode(65 + (index % 26)) + result;
+    index = Math.floor(index / 26) - 1;
+  }
+  return result;
+}
+
+/**
+ * Get only post slugs (lightweight function for generateStaticParams)
+ * Fetches only the slug column to avoid 75MB limit with 7000+ records
+ * This avoids fetching and caching large post data during build
+ * @param limit - Optional limit on number of slugs to return (to avoid serialization limits)
+ */
+export async function getPostSlugs(limit?: number): Promise<string[]> {
   try {
-    const rows = await getSheetRows("Posts");
-    if (!rows.length || rows.length < 2) {
+    // First, fetch only the header row to find slug column
+    const headerRows = await rateLimitedRequest(async () => {
+      const auth = getAuthClient();
+      const sheets = google.sheets({ version: "v4", auth });
+
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: env.SPREADSHEET_ID,
+        range: "Posts!1:1", // Only first row (headers)
+      });
+
+      return res.data.values?.[0] ?? [];
+    });
+
+    if (!headerRows.length) {
       return [];
     }
 
     // Find slug column index
-    const headers = rows[0];
-    const slugIndex = headers.findIndex(
+    const slugIndex = headerRows.findIndex(
       (h) => h?.trim().toLowerCase() === 'slug'
     );
 
@@ -202,11 +227,33 @@ export async function getPostSlugs(): Promise<string[]> {
       return [];
     }
 
-    // Extract only slugs from rows (skip header)
-    return rows
-      .slice(1)
-      .map((row) => row[slugIndex]?.trim())
+    // Convert index to column letter (0 = A, 1 = B, etc.)
+    const columnLetter = indexToColumnLetter(slugIndex);
+    
+    // Fetch only the slug column (skip header row with A2: instead of A1:)
+    const slugRows = await rateLimitedRequest(async () => {
+      const auth = getAuthClient();
+      const sheets = google.sheets({ version: "v4", auth });
+
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: env.SPREADSHEET_ID,
+        range: `Posts!${columnLetter}2:${columnLetter}`, // Only slug column, skip header
+      });
+
+      return res.data.values ?? [];
+    });
+
+    // Extract slugs and filter out empty values
+    let slugs = slugRows
+      .map((row) => row[0]?.trim())
       .filter((slug): slug is string => Boolean(slug));
+    
+    // Apply limit if specified (to avoid serialization limits during build)
+    if (limit && limit > 0) {
+      slugs = slugs.slice(0, limit);
+    }
+    
+    return slugs;
   } catch (error) {
     console.error('Error fetching post slugs:', error);
     return [];

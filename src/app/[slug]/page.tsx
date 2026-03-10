@@ -10,26 +10,26 @@ interface StateRegulationsPageProps {
   params: Promise<{ slug: string }>;
 }
 
-interface State {
-  title: string;
-  code: string;
-}
+// interface State {
+//   title: string;
+//   code: string;
+// }
 
 /**
  * Extract state code from slug and validate it
  * Example: 'al-state-regulations-small-business-requirements' -> 'AL'
  */
-function getStateFromSlug(slug: string): State | null {
-  // Extract first two characters and convert to uppercase
-  const stateCode = slug.substring(0, 2).toUpperCase();
+// function getStateFromSlug(slug: string): State | null {
+//   // Extract first two characters and convert to uppercase
+//   const stateCode = slug.substring(0, 2).toUpperCase();
   
-  // Find state in states.json
-  const state = (statesData as State[]).find(
-    (s) => s.code.toUpperCase() === stateCode
-  );
+//   // Find state in states.json
+//   const state = (statesData as State[]).find(
+//     (s) => s.code.toUpperCase() === stateCode
+//   );
   
-  return state || null;
-}
+//   return state || null;
+// }
 
 /**
  * Check if slug matches the state regulations pattern
@@ -42,7 +42,8 @@ function getStateFromSlug(slug: string): State | null {
 export async function generateStaticParams() {
   // Use lightweight function that only fetches slugs
   // This avoids the 75MB body limit by not fetching full post data
-  const slugs = await getPostSlugs().catch(() => []);
+  // Limit to 1000 slugs to avoid serialization limits (remaining pages will be generated on-demand)
+  const slugs = await getPostSlugs(1000).catch(() => []);
 
   return slugs.map((slug) => ({
     slug,
