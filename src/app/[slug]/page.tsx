@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { siteConfig } from '@/config/site';
 import { generateSeoMetadata } from '@/components/common/Seo';
 import statesData from '@/data/states.json';
-import { getPostBySlug, getPosts } from '@/lib/sheets';
+import { getPostBySlug, getPostSlugs } from '@/lib/sheets';
 
 interface StateRegulationsPageProps {
   params: Promise<{ slug: string }>;
@@ -40,20 +40,13 @@ function getStateFromSlug(slug: string): State | null {
  * Pre-warms the cache during build to avoid quota issues
  */
 export async function generateStaticParams() {
+  // Use lightweight function that only fetches slugs
+  // This avoids the 75MB body limit by not fetching full post data
+  const slugs = await getPostSlugs().catch(() => []);
 
-  // Pre-warm cache by fetching posts once
-  // This ensures all subsequent calls use cache
-  // This is critical to avoid quota issues during build
-
-  
-  // Get posts from cache (should be available now)
-  const posts = await getPosts().catch(() => []);
-
-  const postParams = posts.map((post) => ({
-    slug: post.slug,
+  return slugs.map((slug) => ({
+    slug,
   }));
-  
-  return postParams;
 }
 
 /**

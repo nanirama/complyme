@@ -182,6 +182,38 @@ export async function getPostBySlug(slug: string): Promise<Post | undefined> {
 }
 
 /**
+ * Get only post slugs (lightweight function for generateStaticParams)
+ * This avoids fetching and caching large post data during build
+ */
+export async function getPostSlugs(): Promise<string[]> {
+  try {
+    const rows = await getSheetRows("Posts");
+    if (!rows.length || rows.length < 2) {
+      return [];
+    }
+
+    // Find slug column index
+    const headers = rows[0];
+    const slugIndex = headers.findIndex(
+      (h) => h?.trim().toLowerCase() === 'slug'
+    );
+
+    if (slugIndex === -1) {
+      return [];
+    }
+
+    // Extract only slugs from rows (skip header)
+    return rows
+      .slice(1)
+      .map((row) => row[slugIndex]?.trim())
+      .filter((slug): slug is string => Boolean(slug));
+  } catch (error) {
+    console.error('Error fetching post slugs:', error);
+    return [];
+  }
+}
+
+/**
  * Get posts filtered by category and keywords containing 'state' (only for 'business-compliance')
  * Excludes posts with slug 'federal-regulations' and sorts results alphabetically by title
  * @param category - The category name to filter by (e.g., 'business-compliance')
