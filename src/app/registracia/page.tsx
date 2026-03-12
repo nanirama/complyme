@@ -5,11 +5,12 @@ import { useForm, Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { createClient } from '@supabase/supabase-js';
+import { env } from '@/config/site';
 import zipData from '@/data/USCities.json';
 
-// Supabase configuration - you'll need to add these to your .env file
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Supabase configuration from site.ts
+const supabaseUrl = env.SUPABASE_URL;
+const supabaseAnonKey = env.SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 // Validation schemas
@@ -94,6 +95,7 @@ export default function RegistraciaPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [zipFound, setZipFound] = useState(false);
 
   const steps = ['Step 1', 'Step 2', 'Step 3', 'Step 4'];
 
@@ -141,35 +143,37 @@ export default function RegistraciaPage() {
         if (supabase) {
           const snakeCaseData = convertToSnakeCase(updatedData);
           const { error } = await supabase.from('gmc').insert([snakeCaseData]);
-          
           if (error) {
             console.error('Error saving to database:', error);
             alert('There was an error submitting your form. Please try again.');
-          } else {
-            setIsSubmitted(true);
-            // Send email notification
-            try {
-              await fetch('/api/send-email', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  templateId: Number(process.env.NEXT_PUBLIC_REGISTRATION_TEMPLATE_ID || 0),
-                  email: updatedData.email,
-                  params: {
-                    company: updatedData.company,
-                  },
-                }),
-              });
-            } catch (emailError) {
-              console.error('Error sending email:', emailError);
-              // Don't fail the form submission if email fails
-            }
+            return;
           }
-        } else {
-          console.warn('Supabase not configured');
-          setIsSubmitted(true);
+        }
+        
+        // Mark as submitted (works with or without Supabase)
+        setIsSubmitted(true);
+        
+        // Send email notification (if configured)
+        try {
+          const templateId = env.BREVO_REGISTRATION_TEMPLATE_ID;
+          if (templateId) {
+            await fetch('/api/send-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                templateId: Number(templateId),
+                email: updatedData.email,
+                params: {
+                  company: updatedData.company,
+                },
+              }),
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending email:', emailError);
+          // Don't fail the form submission if email fails
         }
       } catch (error) {
         console.error('Error:', error);
@@ -195,6 +199,7 @@ export default function RegistraciaPage() {
       setValue('city', '');
       setValue('state', '');
       setValue('county', '');
+      setZipFound(false);
       return;
     }
     
@@ -216,17 +221,20 @@ export default function RegistraciaPage() {
           setValue('city', matchedZip.city);
           setValue('state', matchedZip.state);
           setValue('county', matchedZip.county);
+          setZipFound(true);
         } else {
-          // ZIP not found - clear fields
+          // ZIP not found - clear fields and make them editable
           setValue('city', '');
           setValue('state', '');
           setValue('county', '');
+          setZipFound(false);
         }
       } catch (error) {
         console.error('Error looking up ZIP code:', error);
         setValue('city', '');
         setValue('state', '');
         setValue('county', '');
+        setZipFound(false);
       } finally {
         setZipLoading(false);
       }
@@ -304,8 +312,10 @@ export default function RegistraciaPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
                   <input
                     {...register('city')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-full bg-gray-50"
-                    readOnly
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-full ${
+                      zipFound ? 'bg-gray-50' : 'bg-white'
+                    } ${!zipFound ? 'focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
+                    readOnly={zipFound}
                     value={watchedValues.city || ''}
                   />
                 </div>
@@ -313,8 +323,10 @@ export default function RegistraciaPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                   <input
                     {...register('state')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-full bg-gray-50"
-                    readOnly
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-full ${
+                      zipFound ? 'bg-gray-50' : 'bg-white'
+                    } ${!zipFound ? 'focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
+                    readOnly={zipFound}
                     value={watchedValues.state || ''}
                   />
                 </div>
@@ -322,8 +334,10 @@ export default function RegistraciaPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">County</label>
                   <input
                     {...register('county')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-full bg-gray-50"
-                    readOnly
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-full ${
+                      zipFound ? 'bg-gray-50' : 'bg-white'
+                    } ${!zipFound ? 'focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
+                    readOnly={zipFound}
                     value={watchedValues.county || ''}
                   />
                 </div>

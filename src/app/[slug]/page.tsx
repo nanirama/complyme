@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { siteConfig } from '@/config/site';
 import { generateSeoMetadata } from '@/components/common/Seo';
-import statesData from '@/data/states.json';
 import { getPostBySlug, getPostSlugs } from '@/lib/sheets';
 
 interface StateRegulationsPageProps {
@@ -53,32 +52,32 @@ export async function generateStaticParams() {
 /**
  * Generate metadata for SEO
  */
-// export async function generateMetadata(
-//   { params }: StateRegulationsPageProps
-// ): Promise<Metadata> {
-//   const { slug } = await params;
+export async function generateMetadata(
+  { params }: StateRegulationsPageProps
+): Promise<Metadata> {
+  const { slug } = await params;
   
-//   // First check if this is a post from sheets
-//   const post = await getPostBySlug(slug);
-//   if (post) {
-//     const description = post.excerpt || post.description || post.content?.substring(0, 160) || `Read ${post.title}`;
+  // First check if this is a post from sheets
+  const post = await getPostBySlug(slug);
+  if (post) {
+    const description = post.excerpt || post.description || post.content?.substring(0, 160) || `Read ${post.title}`;
     
-//     return generateSeoMetadata({
-//       title: post.title,
-//       description,
-//       keywords: post.keywords?.split(',').map(k => k.trim()) || [post.title],
-//       url: `/${slug}`,
-//       type: 'article',
-//       image: post.thumbnail || '/images/logo.webp',
-//       siteName: siteConfig.name,
-//       siteUrl: siteConfig.siteUrl,
-//     });
-//   }
+    return generateSeoMetadata({
+      title: post.title,
+      description,
+      keywords: post.keywords?.split(',').map(k => k.trim()) || [post.title],
+      url: `/${slug}`,
+      type: 'article',
+      image: post.thumbnail || '/images/logo.webp',
+      siteName: siteConfig.name,
+      siteUrl: siteConfig.siteUrl,
+    });
+  }
 
-//   return {
-//     title: 'Page Not Found',
-//   };
-// }
+  return {
+    title: 'Page Not Found',
+  };
+}
 
 /**
  * Dynamic Page Handler
