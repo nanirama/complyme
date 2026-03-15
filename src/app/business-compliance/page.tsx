@@ -23,7 +23,12 @@ export const metadata: Metadata = generateSeoMetadata({
  * - W3C Validation
  * - WCAG 2.1 AA Accessibility
  * - Technical SEO
+ * 
+ * Using dynamic rendering to avoid oversized ISR page errors
+ * Data is fetched on-demand instead of at build time
  */
+export const dynamic = 'force-dynamic';
+
 export default async function BusinessCompliancePage() {
   // Get business compliance posts
   const posts = await getPostsByCategory('business-compliance');
