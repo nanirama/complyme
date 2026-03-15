@@ -59,10 +59,12 @@ export function generateSeoMetadata({
   
   // Ensure image URL is absolute
   let imageUrl: string | undefined = undefined;
+  let isLogoImage = false;
   if (image) {
     if (image.startsWith('http://') || image.startsWith('https://')) {
       // Already absolute URL
       imageUrl = image;
+      isLogoImage = image.includes('logo.webp');
     } else {
       // Relative URL - make it absolute
       // Ensure image path starts with /
@@ -70,8 +72,14 @@ export function generateSeoMetadata({
       // Ensure siteUrl doesn't end with / to avoid double slashes
       const cleanSiteUrl = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
       imageUrl = `${cleanSiteUrl}${cleanImagePath}`;
+      isLogoImage = image.includes('logo.webp');
     }
   }
+
+  // Set dimensions based on image type
+  const imageWidth = isLogoImage ? 300 : 1200;
+  const imageHeight = isLogoImage ? 90 : 630;
+  const imageType = isLogoImage ? 'image/webp' : 'image/jpeg';
 
   return {
     title: fullTitle,
@@ -92,9 +100,9 @@ export function generateSeoMetadata({
           {
             url: imageUrl,
             alt: title,
-            width: 1200,
-            height: 630,
-            type: 'image/jpeg',
+            width: imageWidth,
+            height: imageHeight,
+            type: imageType,
           },
         ],
       }),

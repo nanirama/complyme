@@ -170,6 +170,7 @@ export async function getPosts(): Promise<Post[]> {
       ...row,
       slug: row.slug,
       title: row.title ?? "",
+      cities: row.cities ?? "",
     })) as Post[];
   
   cacheTimestamp = now;
@@ -295,9 +296,45 @@ export async function getStateCategoryPosts(category: string): Promise<Post[]> {
  */
 export async function getPostsByCategory(category: string): Promise<Post[]> {
   const posts = await getPosts();
-  return posts.filter(
-    (post) => post.category?.toLowerCase() === category.toLowerCase()
-  );
+  const categoryLower = category.toLowerCase().trim();
+  
+  // Debug: Check first few posts to see category field
+  if (posts.length > 0) {
+    const samplePost = posts[0] as Record<string, string>;
+    const sampleCategory = samplePost.category;
+    console.log(`[getPostsByCategory] Looking for category: "${categoryLower}"`);
+    console.log(`[getPostsByCategory] Sample post category field: "${sampleCategory}"`);
+    console.log(`[getPostsByCategory] Total posts before filter: ${posts.length}`);
+    
+    // Check unique category values in first 10 posts
+    const uniqueCategories = new Set<string>();
+    posts.slice(0, 10).forEach((post) => {
+      const postData = post as Record<string, string>;
+      const cat = postData.category || '(no category)';
+      uniqueCategories.add(cat);
+    });
+    console.log(`[getPostsByCategory] Sample categories found:`, Array.from(uniqueCategories));
+  }
+  
+  const filtered = posts.filter((post) => {
+    const postData = post as Record<string, string>;
+    // Since rowsToObjects converts headers to lowercase, the field should be 'category'
+    const postCategory = (postData.category || '').toLowerCase().trim();
+    
+    // Only match if category exists and matches exactly
+    if (!postCategory) {
+      return false; // Exclude posts without category
+    }
+    
+    // Normalize both values for comparison (handle spaces, hyphens, etc.)
+    const normalizedPostCategory = postCategory.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const normalizedCategory = categoryLower.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    
+    return normalizedPostCategory === normalizedCategory;
+  });
+  
+  console.log(`[getPostsByCategory] Filtered ${filtered.length} posts from ${posts.length} total for category "${category}"`);
+  return filtered;
 }
 
 // export async function getPostsBySector(category: string, sector: string): Promise<Post[]> {

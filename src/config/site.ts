@@ -63,7 +63,7 @@ export interface SiteConfig {
 export const siteConfig: SiteConfig = {
   // General Site Metadata
   title: 'Small Business Services',
-  siteUrl: 'https://smb.comply.me',
+  siteUrl: 'https://www.comply.me',
   name: 'Comply.Me',
   description: 'Comply.Me is a specialized and tailored solutions provider for small businesses.',
   address: 'New York, NY',

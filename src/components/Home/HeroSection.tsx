@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAppContext } from "@/contexts/AppContext";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -142,12 +144,16 @@ function StepCard({ id, label, color, borderColor, bgColor, lightBg }: StepCardP
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function HeroSection() {
-  const [zipCode, setZipCode] = useState("");
+  const router = useRouter();
+  const { selectedZip, setSelectedZip } = useAppContext();
+  const [zipCode, setZipCode] = useState(selectedZip || "");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handler placeholder — wire to your routing logic
-    console.log("ZipCode submitted:", zipCode);
+    // Set zipCode to selectedZip state variable
+    setSelectedZip(zipCode);
+    // Navigate to business-compliance page
+    router.push("/business-compliance");
   };
 
   return (

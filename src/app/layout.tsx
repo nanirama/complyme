@@ -4,6 +4,7 @@ import "./globals.css";
 import { siteConfig } from "@/config/site";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import { AppProvider } from "@/contexts/AppContext";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -84,13 +85,15 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${nunitoSans.variable}  antialiased`}
       >
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main id="main-content" className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <AppProvider>
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main id="main-content" className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </AppProvider>
       </body>
     </html>
   );
