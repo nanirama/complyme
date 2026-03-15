@@ -1,19 +1,56 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Post } from '@/lib/sheets';
-import zipData from '@/data/USCities.json';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface BusinessComplianceClientProps {
   posts: Post[];
 }
 
-// Helper function to lookup city and state from ZIP code
-function lookupZipCode(zip: string): { city: string; state: string; found: boolean } {
-  if (!zip || zip.length < 3) {
+// Type for ZIP data
+type ZipDataItem = {
+  zip_code: number;
+  city: string;
+  state: string;
+  county: string;
+};
+
+// Lazy-loaded ZIP lookup map for O(1) access
+let zipLookupMap: Map<number, { city: string; state: string }> | null = null;
+let zipDataPromise: Promise<Map<number, { city: string; state: string }>> | null = null;
+
+// Initialize ZIP lookup map (lazy loaded)
+function getZipLookupMap(): Promise<Map<number, { city: string; state: string }>> {
+  if (zipLookupMap) {
+    return Promise.resolve(zipLookupMap);
+  }
+  
+  if (zipDataPromise) {
+    return zipDataPromise;
+  }
+  
+  zipDataPromise = import('@/data/USCities.json').then((module) => {
+    const zipData = module.default as ZipDataItem[];
+    const map = new Map<number, { city: string; state: string }>();
+    
+    // Build lookup map for O(1) access
+    zipData.forEach((item) => {
+      map.set(item.zip_code, { city: item.city, state: item.state });
+    });
+    
+    zipLookupMap = map;
+    return map;
+  });
+  
+  return zipDataPromise;
+}
+
+// Helper function to lookup city and state from ZIP code (optimized with Map)
+async function lookupZipCode(zip: string): Promise<{ city: string; state: string; found: boolean }> {
+  if (!zip || zip.length < 5) {
     return { city: '', state: '', found: false };
   }
   
@@ -23,15 +60,11 @@ function lookupZipCode(zip: string): { city: string; state: string; found: boole
       return { city: '', state: '', found: false };
     }
     
-    const matchedZip = (zipData as Array<{
-      zip_code: number;
-      city: string;
-      state: string;
-      county: string;
-    }>).find((item) => item.zip_code === zipNumber);
+    const map = await getZipLookupMap();
+    const matched = map.get(zipNumber);
     
-    if (matchedZip) {
-      return { city: matchedZip.city, state: matchedZip.state, found: true };
+    if (matched) {
+      return { city: matched.city, state: matched.state, found: true };
     }
   } catch (error) {
     console.error('Error looking up ZIP code:', error);
@@ -44,28 +77,56 @@ export default function BusinessComplianceClient({ posts }: BusinessComplianceCl
   const { selectedZip, setSelectedZip } = useAppContext();
   const defaultZip = selectedZip || '10001';
   
-  // Initialize city and state using lazy initializer
-  const initialZipData = lookupZipCode(defaultZip);
   const [zipCode, setZipCode] = useState<string>(defaultZip);
-  const [city, setCity] = useState<string>(initialZipData.city);
-  const [state, setState] = useState<string>(initialZipData.state);
-  const [zipFound, setZipFound] = useState<boolean>(initialZipData.found);
+  const [city, setCity] = useState<string>('');
+  const [state, setState] = useState<string>('');
+  const [zipFound, setZipFound] = useState<boolean>(false);
+  const [isLoadingZip, setIsLoadingZip] = useState<boolean>(false);
   const filterRef = useRef<HTMLElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize ZIP lookup on mount
+  useEffect(() => {
+    const initializeZip = async () => {
+      const zipToLookup = selectedZip || defaultZip;
+      if (zipToLookup && zipToLookup.length >= 5) {
+        setIsLoadingZip(true);
+        try {
+          const zipData = await lookupZipCode(zipToLookup);
+          setZipCode(zipToLookup);
+          setCity(zipData.city);
+          setState(zipData.state);
+          setZipFound(zipData.found);
+        } catch (error) {
+          console.error('Error initializing ZIP:', error);
+        } finally {
+          setIsLoadingZip(false);
+        }
+      }
+    };
+    
+    initializeZip();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - selectedZip/defaultZip are initial values
 
   // Sync City and State when selectedZip changes from context (e.g., from HeroSection)
-  // Note: This useEffect is necessary to sync local state with context changes
-  // Initial values are set via lazy initializer above, this handles updates
   const prevSelectedZipRef = useRef<string | undefined>(selectedZip);
   
   useEffect(() => {
     // Only update if selectedZip changed and is different from current zipCode
-    if (selectedZip && selectedZip !== prevSelectedZipRef.current && selectedZip !== zipCode) {
-      const zipData = lookupZipCode(selectedZip);
-      setZipCode(selectedZip);
-      setCity(zipData.city);
-      setState(zipData.state);
-      setZipFound(zipData.found);
-      prevSelectedZipRef.current = selectedZip;
+    if (selectedZip && selectedZip !== prevSelectedZipRef.current && selectedZip !== zipCode && selectedZip.length >= 5) {
+      setIsLoadingZip(true);
+      lookupZipCode(selectedZip).then((zipData) => {
+        setZipCode(selectedZip);
+        setCity(zipData.city);
+        setState(zipData.state);
+        setZipFound(zipData.found);
+        setIsLoadingZip(false);
+        prevSelectedZipRef.current = selectedZip;
+      }).catch((error) => {
+        console.error('Error looking up ZIP from context:', error);
+        setIsLoadingZip(false);
+      });
     }
   }, [selectedZip, zipCode]);
 
@@ -99,52 +160,75 @@ export default function BusinessComplianceClient({ posts }: BusinessComplianceCl
     return filtered;
   }, [city, state, posts]);
 
-  // Handle ZIP code change and auto-populate City, State
+  // Debounced ZIP lookup function
+  const performZipLookup = useCallback(async (zip: string) => {
+    if (zip.length < 5) {
+      setCity('');
+      setState('');
+      setZipFound(false);
+      return;
+    }
+    
+    setIsLoadingZip(true);
+    try {
+      const zipData = await lookupZipCode(zip);
+      setCity(zipData.city);
+      setState(zipData.state);
+      setZipFound(zipData.found);
+    } catch (error) {
+      console.error('Error looking up ZIP code:', error);
+      setCity('');
+      setState('');
+      setZipFound(false);
+    } finally {
+      setIsLoadingZip(false);
+    }
+  }, []);
+
+  // Handle ZIP code change with debouncing
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const zip = e.target.value.replace(/\D/g, '').substring(0, 5);
     setZipCode(zip);
     setSelectedZip(zip); // Update context
     
-    // Use helper function to lookup ZIP code
-    const zipData = lookupZipCode(zip);
-    setCity(zipData.city);
-    setState(zipData.state);
-    setZipFound(zipData.found);
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // If ZIP is complete (5 digits), lookup immediately
+    // Otherwise, debounce for 500ms
+    if (zip.length === 5) {
+      performZipLookup(zip);
+    } else if (zip.length >= 3) {
+      debounceTimerRef.current = setTimeout(() => {
+        performZipLookup(zip);
+      }, 500);
+    } else {
+      setCity('');
+      setState('');
+      setZipFound(false);
+    }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     // Reset to default ZIP code
     const defaultZip = '10001';
     setZipCode(defaultZip);
     setSelectedZip(defaultZip); // Update context
     
-    // Look up city and state for default ZIP to trigger filtering
-    try {
-      const zipNumber = parseInt(defaultZip, 10);
-      const matchedZip = (zipData as Array<{
-        zip_code: number;
-        city: string;
-        state: string;
-        county: string;
-      }>).find((item) => item.zip_code === zipNumber);
-      
-      if (matchedZip) {
-        setCity(matchedZip.city);
-        setState(matchedZip.state);
-        setZipFound(true);
-      } else {
-        setCity('');
-        setState('');
-        setZipFound(false);
-      }
-    } catch (error) {
-      console.error('Error looking up default ZIP code:', error);
-      setCity('');
-      setState('');
-      setZipFound(false);
-    }
-    // Filtering will automatically happen via useMemo when city/state change
+    // Look up city and state for default ZIP
+    await performZipLookup(defaultZip);
   };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <main id="main-content" className="min-h-screen bg-gray-100">
@@ -191,10 +275,16 @@ export default function BusinessComplianceClient({ posts }: BusinessComplianceCl
                         type="text"
                         value={zipCode}
                         onChange={handleZipChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isLoadingZip}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="XXXXX"
                         maxLength={5}
                       />
+                      {isLoadingZip && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
