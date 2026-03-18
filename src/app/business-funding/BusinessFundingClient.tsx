@@ -4,7 +4,49 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Post } from '@/lib/sheets';
-import zipData from '@/data/USCities.json';
+
+// Type for ZIP data
+type ZipDataItem = {
+  zip_code: number;
+  city: string;
+  state: string;
+  county: string;
+};
+
+// Lazy-loaded ZIP lookup map for O(1) access (avoids bundling large JSON into initial JS)
+let zipLookupMap: Map<number, { city: string; state: string }> | null = null;
+let zipDataPromise: Promise<Map<number, { city: string; state: string }>> | null = null;
+
+function getZipLookupMap(): Promise<Map<number, { city: string; state: string }>> {
+  if (zipLookupMap) return Promise.resolve(zipLookupMap);
+  if (zipDataPromise) return zipDataPromise;
+
+  zipDataPromise = import('@/data/USCities.json').then((module) => {
+    const zipData = module.default as ZipDataItem[];
+    const map = new Map<number, { city: string; state: string }>();
+    zipData.forEach((item) => map.set(item.zip_code, { city: item.city, state: item.state }));
+    zipLookupMap = map;
+    return map;
+  });
+
+  return zipDataPromise;
+}
+
+async function lookupZipCode(zip: string): Promise<{ city: string; state: string; found: boolean }> {
+  if (!zip || zip.length < 3) return { city: '', state: '', found: false };
+  const zipNumber = parseInt(zip, 10);
+  if (Number.isNaN(zipNumber)) return { city: '', state: '', found: false };
+
+  try {
+    const map = await getZipLookupMap();
+    const matched = map.get(zipNumber);
+    if (matched) return { city: matched.city, state: matched.state, found: true };
+  } catch (error) {
+    console.error('Error looking up ZIP code:', error);
+  }
+
+  return { city: '', state: '', found: false };
+}
 
 interface BusinessFundingClientProps {
   posts: Post[];
@@ -16,25 +58,7 @@ export default function BusinessFundingClient({ posts }: BusinessFundingClientPr
   const [state, setState] = useState<string>('');
   const [zipLoading, setZipLoading] = useState(false);
   const [zipFound, setZipFound] = useState(false);
-  const [filterWidth, setFilterWidth] = useState<string>('100%');
-  const [contentWidth, setContentWidth] = useState<string>('100%');
   const filterRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      if (window.innerWidth >= 1024) {
-        setFilterWidth('20%');
-        setContentWidth('75%');
-      } else {
-        setFilterWidth('100%');
-        setContentWidth('100%');
-      }
-    };
-
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
 
   // Handle ZIP code change and auto-populate City, State
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,53 +77,30 @@ export default function BusinessFundingClient({ posts }: BusinessFundingClientPr
     if (zip.length >= 3 && zip.length <= 5) {
       setZipLoading(true);
       
-      try {
-        const zipNumber = parseInt(zip, 10);
-        const matchedZip = (zipData as Array<{
-          zip_code: number;
-          city: string;
-          state: string;
-          county: string;
-        }>).find((item) => item.zip_code === zipNumber);
-        
-        if (matchedZip) {
-          setCity(matchedZip.city);
-          setState(matchedZip.state);
-          setZipFound(true);
-        } else {
+      lookupZipCode(zip)
+        .then((zipData) => {
+          setCity(zipData.city);
+          setState(zipData.state);
+          setZipFound(zipData.found);
+        })
+        .catch((error) => {
+          console.error('Error looking up ZIP code:', error);
           setCity('');
           setState('');
           setZipFound(false);
-        }
-      } catch (error) {
-        console.error('Error looking up ZIP code:', error);
-        setCity('');
-        setState('');
-        setZipFound(false);
-      } finally {
-        setZipLoading(false);
-      }
+        })
+        .finally(() => {
+          setZipLoading(false);
+        });
     }
   };
 
   // Get city from ZIP code lookup
   const cityFromZip = useMemo(() => {
     if (!zipCode || zipCode.length < 3) return '';
-    
-    try {
-      const zipNumber = parseInt(zipCode, 10);
-      const matchedZip = (zipData as Array<{
-        zip_code: number;
-        city: string;
-        state: string;
-        county: string;
-      }>).find((item) => item.zip_code === zipNumber);
-      
-      return matchedZip?.city || '';
-    } catch {
-      return '';
-    }
-  }, [zipCode]);
+    // City/state are already derived from lookupZipCode in handleZipChange.
+    return city || '';
+  }, [city, zipCode]);
 
   // Filter posts based on location filters
   const filteredPosts = useMemo(() => {
@@ -180,8 +181,7 @@ export default function BusinessFundingClient({ posts }: BusinessFundingClientPr
           {/* Filter Section - Right Sidebar */}
           <aside 
             ref={filterRef}
-            className="flex-shrink-0 lg:ml-auto justify-end hidden" 
-            style={{ width: filterWidth }}
+            className="flex-shrink-0 lg:ml-auto justify-end hidden"
           >
             <div className="p-6">
               {/* Locations Section */}
@@ -263,7 +263,7 @@ export default function BusinessFundingClient({ posts }: BusinessFundingClientPr
           </aside>
 
           {/* Content Grid - Right Side */}
-          <div className="flex-1 " style={{ width: contentWidth }}>
+          <div className="flex-1">
             {filteredPosts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 items-stretch md:gap-4">
                 {filteredPosts.map((post) => (

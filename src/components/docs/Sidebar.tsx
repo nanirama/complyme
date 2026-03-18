@@ -18,8 +18,8 @@ function FolderItem({ item, isActive, isFolderActive }: { item: SidebarItem; isA
         href={item.link}
         className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
           isActive(item.link)
-            ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            ? 'bg-blue-100 text-blue-900'
+            : 'text-gray-700 hover:bg-gray-100'
         }`}
         aria-current={isActive(item.link) ? 'page' : undefined}
       >
@@ -33,8 +33,8 @@ function FolderItem({ item, isActive, isFolderActive }: { item: SidebarItem; isA
       <button
         className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
           isFolderActive
-            ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            ? 'text-gray-700 hover:bg-gray-100'
+            : 'text-gray-700 hover:bg-gray-100'
         }`}
         aria-expanded={true}
         aria-controls={`folder-${item.link.replace(/\//g, '-')}`}
@@ -57,7 +57,7 @@ function FolderItem({ item, isActive, isFolderActive }: { item: SidebarItem; isA
                 className={`block px-3 py-1 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   isActive(child.link)
                     ? 'bg-orange-500 text-white font-medium'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    : 'text-gray-600 hover:bg-gray-50'
                 }`}
                 aria-current={isActive(child.link) ? 'page' : undefined}
               >

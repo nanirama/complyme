@@ -81,8 +81,6 @@ export default function Footer() {
               alt={`${siteConfig.name} logo`}
               width={150}
               height={45}
-              priority
-              fetchPriority="high"
               className="w-[150px] h-[45px] object-contain"
             />
               </div>

@@ -9,7 +9,7 @@ interface CardProps {
 export function Card({ title, icon, children }: CardProps) {
   return (
     <article 
-      className="h-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col"
+      className="h-full rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col"
       aria-labelledby={`card-title-${title.replace(/\s+/g, '-').toLowerCase()}`}
     >
       <header className="flex items-start gap-3">
@@ -21,11 +21,11 @@ export function Card({ title, icon, children }: CardProps) {
         <div className="flex-1">
           <h3 
             id={`card-title-${title.replace(/\s+/g, '-').toLowerCase()}`}
-            className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100"
+            className="text-lg font-semibold mb-2 text-gray-900"
           >
             {title}
           </h3>
-          <div className="text-gray-600 dark:text-gray-400">{children}</div>
+          <div className="text-gray-600">{children}</div>
         </div>
       </header>
     </article>

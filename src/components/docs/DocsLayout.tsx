@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TableOfContents } from './TableOfContents';
 import { DocMetadata } from '@/lib/types';
 import { generateSidebar } from '@/lib/docs';
+import Search from './Search';
 
 interface DocsLayoutProps {
   doc: DocMetadata;
@@ -14,30 +15,30 @@ export async function DocsLayout({ doc, locale, children }: DocsLayoutProps) {
   const sidebar = generateSidebar(locale);
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gray-50 text-gray-900 py-6">
       {/* Header */}
-      {/* <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-gray-900/60">
+      <header className="py-2 sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex items-center justify-between h-16" aria-label="Documentation header">
             <div className="flex items-center gap-4">
-              <Link 
+              {/* <Link 
                 href="/docs" 
-                className="text-xl font-bold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
+                className="text-xl font-bold text-gray-900 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
               >
                 Docs
-              </Link>
+              </Link> */}
             </div>
             <div className="flex items-center gap-4">
-              <Search />
-              <ThemeToggle />
+              <Search locale={locale} />
+              {/* <ThemeToggle /> */}
             </div>
           </nav>
         </div>
-      </header> */}
+      </header>
 
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Layout: stack on mobile, 3-column on desktop */}
-        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8 my-6">
           {/* Sidebar */}
           <aside
             className="hidden lg:block w-64 flex-shrink-0 pt-6"
@@ -56,14 +57,14 @@ export async function DocsLayout({ doc, locale, children }: DocsLayoutProps) {
               <header>
                 <h1 
                   id={doc.slug}
-                  className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100"
+                  className="text-4xl font-bold mb-4 text-gray-900"
                   itemProp="headline"
                 >
                   {doc.frontmatter.title}
                 </h1>
                 {doc.frontmatter.description && (
                   <p 
-                    className="text-base text-gray-600 dark:text-gray-400 mb-8"
+                    className="text-base text-gray-600 mb-8"
                     itemProp="description"
                   >
                     {doc.frontmatter.description}
@@ -71,7 +72,7 @@ export async function DocsLayout({ doc, locale, children }: DocsLayoutProps) {
                 )}
               </header>
               <div
-                className="prose prose-base sm:prose-lg dark:prose-invert max-w-none"
+                className="prose prose-base sm:prose-lg max-w-none"
                 itemProp="articleBody"
               >
                 {children}

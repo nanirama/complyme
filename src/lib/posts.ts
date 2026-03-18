@@ -17,6 +17,10 @@ export interface Post {
 
 const postsDirectory = path.join(process.cwd(), 'src', 'content', 'posts');
 
+// In-memory cache to avoid repeated fs scans on every request in production.
+// Note: In dev, we intentionally skip caching to reflect file edits immediately.
+let cachedAllPosts: Post[] | null = null;
+
 /**
  * Convert a string to a URL-friendly slug
  */
@@ -37,6 +41,10 @@ function slugify(text: string): string {
  * Reads posts from posts/category-name/post-slug structure
  */
 export function getAllPosts(): Post[] {
+  if (process.env.NODE_ENV === 'production' && cachedAllPosts) {
+    return cachedAllPosts;
+  }
+
   try {
     const posts: Post[] = [];
 
@@ -83,11 +91,17 @@ export function getAllPosts(): Post[] {
     }
 
     // Sort by date (newest first)
-    return posts.sort((a, b) => {
+    const sorted = posts.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return dateB - dateA;
     });
+
+    if (process.env.NODE_ENV === 'production') {
+      cachedAllPosts = sorted;
+    }
+
+    return sorted;
   } catch (error) {
     console.error('Error reading posts:', error);
     return [];

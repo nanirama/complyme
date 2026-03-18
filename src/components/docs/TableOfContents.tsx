@@ -72,13 +72,11 @@ export function TableOfContents({ headings, title, fallbackId }: TableOfContents
       className="sticky top-20"
       aria-label="Table of contents"
     >
-      <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      <h2 className="text-sm font-semibold text-gray-900 mb-4">
         {navTitle}
       </h2>
       <ul className="space-y-2" role="list">
-        {itemsToRender.map((heading) => {
-            console.log('heading', heading);
-            return(
+        {itemsToRender.map((heading) => (
           <li key={heading.id}>
             <Link
               href={`#${heading.id}`}
@@ -91,15 +89,15 @@ export function TableOfContents({ headings, title, fallbackId }: TableOfContents
                   : 'ml-8'
               } ${
                 activeId === heading.id
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  ? 'text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
               aria-current={activeId === heading.id ? 'location' : undefined}
             >
               {heading.text}
             </Link>
           </li>
-        )})}
+        ))}
       </ul>
     </nav>
   );
